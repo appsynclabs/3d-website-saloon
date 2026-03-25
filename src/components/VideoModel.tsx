@@ -52,9 +52,16 @@ export default function VideoModel() {
           offsetX = 0;
           offsetY = (canvas!.height - drawHeight) / 2;
         } else {
+          // Default: scale height to canvas.height, which stretches width
           drawHeight = canvas!.height;
-          drawWidth = canvas!.height * imgRatio;
-          offsetY = 0;
+          // Apply a scale factor for portrait phones to avoid zooming in too intensely
+          const isMobilePortrait = window.innerWidth < 768 && canvasRatio < 1;
+          if (isMobilePortrait) {
+            // Shrink the height to 55% of the screen so the width becomes much narrower
+            drawHeight = canvas!.height * 0.55;
+          }
+          drawWidth = drawHeight * imgRatio;
+          offsetY = (canvas!.height - drawHeight) / 2;
           offsetX = (canvas!.width - drawWidth) / 2;
         }
 
@@ -84,8 +91,13 @@ export default function VideoModel() {
 
     // Resize handler
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      const width = document.documentElement.clientWidth;
+      const height = document.documentElement.clientHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
       render();
     };
 
@@ -100,17 +112,23 @@ export default function VideoModel() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'block',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        zIndex: -1,
-      }}
-    />
+    <>
+      <div 
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] md:w-[40vw] md:h-[40vw] bg-[var(--color-red-500)]/20 md:bg-[var(--color-red-500)]/30 blur-[100px] md:blur-[160px] rounded-full" 
+        style={{ zIndex: -2, pointerEvents: 'none' }}
+      />
+      <canvas
+        ref={canvasRef}
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          zIndex: -1,
+        }}
+      />
+    </>
   );
 }
